@@ -1,0 +1,48 @@
+﻿@page "/"
+@using CommunityToolkit.Mvvm.Messaging
+
+<PageTitle>Multi-Player Game Guts</PageTitle>
+
+<h1>Fastest Clicker Wins!</h1>
+
+<form @onsubmit=click>
+    <input type='text' @bind=userName @bind:event=oninput>
+    <button type="submit" disabled=@(((userName?.Length ?? 0) == 0))>Click Me!</button>
+</form>
+
+@if (values != null)
+{
+    <ul>
+        @foreach (var v in values.OrderByDescending(i => i.Item2))
+        {
+            <li>@v.Item1 (@v.Item2.ToString("n0") points)</li>
+        }
+    </ul>
+}
+
+@code {
+    protected override void OnInitialized()
+    {
+        //Using built-in events
+        GameLogic.ValuesChanged += (_, newValues) =>
+        {
+            values = newValues;
+            InvokeAsync(StateHasChanged);
+        };
+
+        //Using the WeakReferenceMessenger from the CommunityToolkit.MVVM library
+        WeakReferenceMessenger.Default.Register<IEnumerable<(string, long)>>(this, (r, m) =>
+        {
+            values = m;
+            InvokeAsync(StateHasChanged);
+        });
+    }
+
+    IEnumerable<(string, long)> values;
+    string? userName;
+
+    void click()
+    {
+        GameLogic.ScorePlayer(userName);
+    }
+}
